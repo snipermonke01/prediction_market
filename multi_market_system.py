@@ -7,6 +7,8 @@ class PredictionMarket:
         self.under_pool = initial_liquidity  # Initial liquidity for "Under Threshold"
         self.total_over_shares = initial_liquidity  # Initial shares for "Over Threshold"
         self.total_under_shares = initial_liquidity  # Initial shares for "Under Threshold"
+        self.over_amount = 0
+        self.under_amount = 0
 
     def buy_shares(self, side, amount):
         """
@@ -25,6 +27,7 @@ class PredictionMarket:
 
             self.over_pool =  self.over_pool + shares
             self.total_over_shares += shares
+            self.over_amount += amount
         else:  # side == "under"
 
             # Shares received are proportional to the change in the "Over" pool
@@ -33,6 +36,7 @@ class PredictionMarket:
             # Update pool sizes
             self.under_pool = self.under_pool + shares
             self.total_under_shares += shares
+            self.under_amount += amount
 
         return shares
 
@@ -56,12 +60,12 @@ class PredictionMarket:
         
         if result == "over":
 
-            payout_pool = self.under_pool - self.initial_liquidity
+            payout_pool = self.under_amount
             winning_shares_amount = self.total_over_shares - self.initial_liquidity
             payout_per_share = payout_pool / winning_shares_amount if winning_shares_amount > 0 else 0
         else:
 
-            payout_pool = self.over_pool - self.initial_liquidity
+            payout_pool = self.over_amount
             winning_shares_amount = self.total_under_shares - self.initial_liquidity
             payout_per_share = payout_pool / winning_shares_amount if winning_shares_amount > 0 else 0
 
@@ -100,29 +104,29 @@ if __name__ == "__main__":
     market1 = system.get_market("Market 1")
     
     # Check initial prices
-    print("Initial Prices:", market1.current_price())
+    print(f'Initial Prices:\nOver: ${market1.current_price()["over"]:.3f}\nUnder: ${market1.current_price()["under"]:.3f}\n')
     
     # Buy shares
-    print("Buying 100 units for 'over' in Market 1")
+    print("Buying $100 of for 'over' in Market 1")
     shares_over = market1.buy_shares("over", 100)
     print(f"Received {shares_over:.2f} shares.")
     
     # Check updated prices
-    print("Current Prices:", market1.current_price())
+    print(f'Updated Prices:\nOver: ${market1.current_price()["over"]:.3f}\nUnder: ${market1.current_price()["under"]:.3f}\n')
     
-    print("Buying 100 units for 'under' in Market 1")
+    print("Buying $100 of 'under' in Market 1")
+    shares_under = market1.buy_shares("under", 50)
+    print(f"Received {shares_under:.2f} shares.")
+    
+    # Check updated prices again
+    print(f'Updated Prices:\nOver: ${market1.current_price()["over"]:.3f}\nUnder: ${market1.current_price()["under"]:.3f}\n')
+    
+    print("Buying $100 of 'under' in Market 1")
     shares_under = market1.buy_shares("under", 100)
     print(f"Received {shares_under:.2f} shares.")
     
     # Check updated prices again
-    print("Updated Prices:", market1.current_price())
-    
-    print("Buying 100 units for 'under' in Market 1")
-    shares_under = market1.buy_shares("under", 100)
-    print(f"Received {shares_under:.2f} shares.")
-    
-    # Check updated prices again
-    print("Updated Prices:", market1.current_price())
+    print(f'Updated Prices:\nOver: ${market1.current_price()["over"]:.3f}\nUnder: ${market1.current_price()["under"]:.3f}\n')
     
     result = "under"
     
@@ -130,9 +134,9 @@ if __name__ == "__main__":
     print(f"Resolving Market 1 with '{result}' as the winner.")
     payout_per_share, payout_pool, winning_shares_amount = market1.resolve_market(result)
 
-    print(f"Payout per '{result}' share: {payout_per_share}")
-    print(f"Total payout: {payout_pool}")
-    print(f"Total winning shares: {winning_shares_amount}")
+    print(f"Payout per '{result}' share: ${payout_per_share:.2f} per share")
+    print(f"Total payout: ${payout_pool}")
+    print(f"Number of winning shares: {winning_shares_amount:.2f}")
 
     # List all markets
     print("All Markets:", system.list_markets())
